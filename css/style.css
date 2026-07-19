@@ -250,6 +250,15 @@ input, select {
   white-space: nowrap;
 }
 
+.weight-input,
+.reps-input {
+  width: 64px;
+  max-width: 100%;
+  justify-self: start;
+  text-align: center;
+  padding: 10px 4px;
+}
+
 .rest-btn {
   background: #f2f2f2;
   border: none;
