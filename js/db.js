@@ -99,12 +99,18 @@ export async function getSessions() {
 export async function getSessionDetail(sessionId) {
   const { data, error } = await supabase
     .from('session_sets')
-    .select('*')
-    .eq('session_id', sessionId)
-    .order('exercise_name', { ascending: true })
-    .order('set_number', { ascending: true });
+    .select('*, exercises(order_index)')
+    .eq('session_id', sessionId);
   if (error) throw error;
-  return data;
+
+  // Order by the exercise's position in the workout day (not alphabetically).
+  // Sets from a deleted exercise (no exercises row left to join) sort last.
+  return data.sort((a, b) => {
+    const aOrder = a.exercises?.order_index ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = b.exercises?.order_index ?? Number.MAX_SAFE_INTEGER;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.set_number - b.set_number;
+  });
 }
 
 export async function getSessionSetsForExercise(exerciseName) {
