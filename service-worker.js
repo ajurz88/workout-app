@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workout-tracker-v5';
+const CACHE_NAME = 'workout-tracker-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,6 +15,8 @@ const APP_SHELL = [
   './js/body.js',
   './js/manage.js',
   './js/exerciseHistory.js',
+  './js/export.js',
+  './js/theme.js',
   './icons/icon-192.png?v=3',
   './icons/icon-512.png?v=3',
   './icons/apple-touch-icon.png?v=3',

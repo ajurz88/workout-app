@@ -6,7 +6,20 @@
   <title>Workout Tracker</title>
 
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" id="theme-color-meta" content="#ffffff" />
+
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('workout-tracker-theme');
+        if (t !== 'dark' && t !== 'light') {
+          t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+        document.getElementById('theme-color-meta').setAttribute('content', t === 'dark' ? '#000000' : '#ffffff');
+      } catch (e) {}
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Workout" />
