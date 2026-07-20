@@ -147,6 +147,21 @@ export async function getSessionNotes(sessionId) {
   return data;
 }
 
+export async function updateSessionSet(id, updates) {
+  const { error } = await supabase.from('session_sets').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteSessionSet(id) {
+  const { error } = await supabase.from('session_sets').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteSession(id) {
+  const { error } = await supabase.from('sessions').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function getDistinctExerciseNames() {
   const { data, error } = await supabase
     .from('session_sets')

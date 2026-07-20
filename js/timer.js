@@ -1,6 +1,7 @@
 let overlay, timeEl, labelEl, dismissBtn, addBtn;
 let intervalId = null;
 let remaining = 0;
+let audioCtx = null;
 
 export function initTimer() {
   overlay = document.getElementById('rest-timer-overlay');
@@ -19,6 +20,13 @@ export function initTimer() {
 export function startRestTimer(seconds, label) {
   if (!seconds || seconds <= 0) return;
   stopRestTimer();
+
+  // iOS only allows audio to play if the AudioContext was created/resumed
+  // directly inside a user-gesture handler (this tap). Doing that here means
+  // the beep at timeout — which fires from a setInterval, not a gesture —
+  // is actually allowed to play.
+  unlockAudio();
+
   remaining = seconds;
   labelEl.textContent = label || 'Rest';
   overlay.classList.add('visible');
@@ -57,19 +65,32 @@ function onTimerDone() {
   if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
 }
 
-function playBeep() {
+function unlockAudio() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  } catch (e) {
+    // Web Audio unavailable — the beep just won't play.
+  }
+}
+
+function playBeep() {
+  if (!audioCtx) return;
+  try {
     const playTone = (delay) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.3, ctx.currentTime + delay);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.4);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(ctx.currentTime + delay);
-      osc.stop(ctx.currentTime + delay + 0.4);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.4);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + delay);
+      osc.stop(audioCtx.currentTime + delay + 0.4);
     };
     playTone(0);
     playTone(0.5);
