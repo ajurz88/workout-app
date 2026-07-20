@@ -185,6 +185,26 @@ export async function deleteSession(id) {
   if (error) throw error;
 }
 
+// All logged sets, flattened with their session's date/day, for CSV export.
+export async function getAllSessionSetsFlat() {
+  const { data, error } = await supabase
+    .from('session_sets')
+    .select('session_id, exercise_name, set_number, weight, reps, sessions!inner(session_date, day)')
+    .order('session_date', { foreignTable: 'sessions', ascending: true })
+    .order('exercise_name', { ascending: true })
+    .order('set_number', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+// All notes, keyed by session_id + exercise_name so they can be matched up
+// against getAllSessionSetsFlat() rows for export.
+export async function getAllSessionNotesFlat() {
+  const { data, error } = await supabase.from('session_notes').select('session_id, exercise_name, note');
+  if (error) throw error;
+  return data;
+}
+
 export async function getDistinctExerciseNames() {
   const { data, error } = await supabase
     .from('session_sets')

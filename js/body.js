@@ -1,4 +1,5 @@
 import { addBodyMeasurement, getBodyMeasurements } from './db.js';
+import { getChartColors } from './theme.js';
 
 const root = () => document.getElementById('view-body');
 
@@ -105,6 +106,7 @@ async function loadData() {
   ).join('');
 
   const labels = rows.map((r) => formatDate(r.measurement_date));
+  const colors = getChartColors();
 
   METRICS.forEach((m) => {
     if (charts[m.key]) charts[m.key].destroy();
@@ -116,9 +118,9 @@ async function loadData() {
         datasets: [
           {
             data,
-            borderColor: '#000000',
-            backgroundColor: '#000000',
-            pointBackgroundColor: '#000000',
+            borderColor: colors.line,
+            backgroundColor: colors.line,
+            pointBackgroundColor: colors.line,
             borderWidth: 2,
             tension: 0.2,
             spanGaps: true,
@@ -129,8 +131,8 @@ async function loadData() {
         responsive: true,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { display: false } },
-          y: { grid: { color: '#eeeeee' } },
+          x: { grid: { display: false }, ticks: { color: colors.tick } },
+          y: { grid: { color: colors.grid }, ticks: { color: colors.tick } },
         },
       },
     });

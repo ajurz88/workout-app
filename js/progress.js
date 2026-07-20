@@ -1,4 +1,5 @@
 import { getDistinctExerciseNames, getSessionSetsForExercise } from './db.js';
+import { getChartColors } from './theme.js';
 
 const root = () => document.getElementById('view-progress');
 let weightChart = null;
@@ -91,23 +92,25 @@ async function loadExerciseProgress(exerciseName) {
 }
 
 function chartDataset(data) {
+  const colors = getChartColors();
   return {
     data,
-    borderColor: '#000000',
-    backgroundColor: '#000000',
-    pointBackgroundColor: '#000000',
+    borderColor: colors.line,
+    backgroundColor: colors.line,
+    pointBackgroundColor: colors.line,
     borderWidth: 2,
     tension: 0.2,
   };
 }
 
 function chartOptions() {
+  const colors = getChartColors();
   return {
     responsive: true,
     plugins: { legend: { display: false } },
     scales: {
-      x: { grid: { display: false } },
-      y: { grid: { color: '#eeeeee' }, beginAtZero: true },
+      x: { grid: { display: false }, ticks: { color: colors.tick } },
+      y: { grid: { color: colors.grid }, ticks: { color: colors.tick }, beginAtZero: true },
     },
   };
 }

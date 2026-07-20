@@ -1,4 +1,6 @@
 import { DAYS, getExercises, addExercise, updateExercise, deleteExercise } from './db.js';
+import { exportAllData } from './export.js';
+import { isDarkMode, toggleTheme } from './theme.js';
 
 const root = () => document.getElementById('view-manage');
 let exercises = [];
@@ -10,6 +12,12 @@ export async function renderManage() {
     <h1 class="view-title">Manage</h1>
     <button id="add-exercise-btn" class="primary-btn">+ Add Exercise</button>
     <div id="manage-list"><p class="muted">Loading...</p></div>
+
+    <div class="manage-settings">
+      <button id="export-data-btn" class="secondary-btn">Export Data (CSV)</button>
+      <button id="dark-mode-btn" class="secondary-btn">${isDarkMode() ? '☀️ Light Mode' : '🌙 Dark Mode'}</button>
+    </div>
+
     <div id="exercise-form-overlay" class="detail-overlay">
       <div class="detail-sheet">
         <div class="detail-header">
@@ -41,6 +49,8 @@ export async function renderManage() {
   document.getElementById('exercise-form-close').addEventListener('click', closeForm);
   document.getElementById('exercise-form').addEventListener('submit', handleSubmit);
   document.getElementById('exercise-delete-btn').addEventListener('click', handleDelete);
+  document.getElementById('export-data-btn').addEventListener('click', handleExport);
+  document.getElementById('dark-mode-btn').addEventListener('click', handleToggleDarkMode);
 
   await loadList();
 }
@@ -149,4 +159,23 @@ async function handleDelete() {
   } catch (e) {
     alert(`Could not delete exercise: ${e.message}`);
   }
+}
+
+async function handleExport() {
+  const btn = document.getElementById('export-data-btn');
+  btn.disabled = true;
+  btn.textContent = 'Exporting...';
+  try {
+    await exportAllData();
+  } catch (e) {
+    alert(`Could not export data: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Export Data (CSV)';
+  }
+}
+
+function handleToggleDarkMode() {
+  toggleTheme();
+  document.getElementById('dark-mode-btn').textContent = isDarkMode() ? '☀️ Light Mode' : '🌙 Dark Mode';
 }
