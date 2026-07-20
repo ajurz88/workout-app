@@ -414,6 +414,21 @@ input, select {
   font-size: 16px;
 }
 
+.detail-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.detail-actions .primary-btn,
+.detail-actions .secondary-btn,
+.detail-actions .danger-btn {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 14px;
+  min-height: 44px;
+}
+
 .detail-exercise {
   margin-bottom: 16px;
 }
@@ -436,6 +451,36 @@ input, select {
   font-size: 14px;
   font-style: italic;
   color: #555555;
+}
+
+.edit-set-row {
+  display: grid;
+  grid-template-columns: 48px 1fr 1fr 36px;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.edit-set-row span {
+  font-size: 14px;
+  color: #333333;
+}
+
+.edit-weight,
+.edit-reps {
+  width: 100%;
+  text-align: center;
+  padding: 8px 4px;
+  min-height: 40px;
+}
+
+.edit-delete-set-btn {
+  background: #ffffff;
+  color: #b00000;
+  border: 1px solid #b00000;
+  border-radius: 8px;
+  min-height: 36px;
+  font-size: 14px;
 }
 
 /* ---------------------------------------------------------------- charts */
