@@ -147,6 +147,23 @@ export async function getSessionNotes(sessionId) {
   return data;
 }
 
+export async function addSessionNote({ sessionId, exerciseId, exerciseName, note }) {
+  const { error } = await supabase
+    .from('session_notes')
+    .insert({ session_id: sessionId, exercise_id: exerciseId, exercise_name: exerciseName, note });
+  if (error) throw error;
+}
+
+export async function updateSessionNote(id, note) {
+  const { error } = await supabase.from('session_notes').update({ note }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteSessionNote(id) {
+  const { error } = await supabase.from('session_notes').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function updateSessionSet(id, updates) {
   const { error } = await supabase.from('session_sets').update(updates).eq('id', id);
   if (error) throw error;
