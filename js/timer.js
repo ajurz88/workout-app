@@ -49,6 +49,7 @@ export function stopRestTimer() {
     intervalId = null;
   }
   overlay.classList.remove('visible');
+  overlay.classList.remove('flash');
 }
 
 function render() {
@@ -62,7 +63,16 @@ function onTimerDone() {
   intervalId = null;
   labelEl.textContent = 'Rest done';
   playBeep();
+  flashOverlay();
   if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+}
+
+function flashOverlay() {
+  overlay.classList.remove('flash');
+  // Force a reflow so re-adding the class restarts the animation even if
+  // the timer is started again quickly after the last flash.
+  void overlay.offsetWidth;
+  overlay.classList.add('flash');
 }
 
 function unlockAudio() {
@@ -73,6 +83,15 @@ function unlockAudio() {
     if (audioCtx.state === 'suspended') {
       audioCtx.resume();
     }
+    // Play an inaudible blip immediately, inside this tap's gesture. Calling
+    // resume() alone doesn't reliably unlock playback on every iOS version —
+    // actually starting a sound (even silent) is the more reliable unlock.
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.0001;
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
   } catch (e) {
     // Web Audio unavailable — the beep just won't play.
   }
