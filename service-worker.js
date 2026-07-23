@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workout-tracker-v6';
+const CACHE_NAME = 'workout-tracker-v8';
 const APP_SHELL = [
   './',
   './index.html',
@@ -17,9 +17,11 @@ const APP_SHELL = [
   './js/exerciseHistory.js',
   './js/export.js',
   './js/theme.js',
+  './js/gymBarcode.js',
   './icons/icon-192.png?v=3',
   './icons/icon-512.png?v=3',
   './icons/apple-touch-icon.png?v=3',
+  './assets/gym-barcode.jpg',
 ];
 
 self.addEventListener('install', (event) => {
