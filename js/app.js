@@ -1,6 +1,7 @@
 import { isConfigured } from './supabaseClient.js';
 import { initTimer } from './timer.js';
 import { initExerciseHistory } from './exerciseHistory.js';
+import { initGymBarcode } from './gymBarcode.js';
 import { renderToday } from './today.js';
 import { renderHistory } from './history.js';
 import { renderProgress } from './progress.js';
@@ -52,6 +53,7 @@ function registerServiceWorker() {
 async function init() {
   initTimer();
   initExerciseHistory();
+  initGymBarcode();
   initNav();
   showConfigWarningIfNeeded();
   registerServiceWorker();

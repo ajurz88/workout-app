@@ -1,6 +1,7 @@
 import { DAYS, getExercisesForDay, getLastLoggedSets, saveSession } from './db.js';
 import { startRestTimer } from './timer.js';
 import { openExerciseHistory } from './exerciseHistory.js';
+import { openGymBarcode } from './gymBarcode.js';
 
 const root = () => document.getElementById('view-today');
 const DRAFT_KEY = 'workout-tracker-draft-v1';
@@ -16,11 +17,14 @@ export async function renderToday() {
   const container = root();
   container.innerHTML = `
     <h1 class="view-title">Today</h1>
+    <button id="gym-checkin-btn" class="secondary-btn">🎫 Gym Check-In</button>
     <div class="day-picker">
       ${DAYS.map((d) => `<button class="day-btn" data-day="${d}">${d}</button>`).join('')}
     </div>
     <div id="today-log"></div>
   `;
+
+  document.getElementById('gym-checkin-btn').addEventListener('click', openGymBarcode);
 
   container.querySelectorAll('.day-btn').forEach((btn) => {
     btn.addEventListener('click', () => selectDay(btn.dataset.day));
