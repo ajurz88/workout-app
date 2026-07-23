@@ -50,7 +50,7 @@ html, body {
 }
 
 body {
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
 #app {
@@ -351,6 +351,44 @@ input, select {
 
 .save-session-bar input[type='date'] {
   width: 100%;
+}
+
+/* ---------------------------------------------------------------- gym check-in barcode */
+#gym-checkin-btn {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.barcode-overlay {
+  position: fixed;
+  inset: 0;
+  /* Always white, regardless of theme — best contrast/brightness for a
+     barcode scanner to read off the screen. */
+  background: #ffffff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 24px;
+}
+
+.barcode-overlay.visible {
+  display: flex;
+}
+
+.barcode-image {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  border-radius: 8px;
+}
+
+.barcode-close {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  right: 16px;
+  background: #f2f2f2;
+  color: #000000;
 }
 
 /* ---------------------------------------------------------------- rest timer overlay */
@@ -661,6 +699,7 @@ input, select {
 
 .manage-settings {
   margin-top: 28px;
+  margin-bottom: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--border);
   display: flex;
