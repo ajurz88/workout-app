@@ -186,11 +186,6 @@ input, select {
   min-height: 44px;
 }
 
-.select-input {
-  width: 100%;
-  margin-bottom: 16px;
-}
-
 /* ---------------------------------------------------------------- day picker (Today) */
 .day-picker {
   display: grid;
@@ -476,6 +471,74 @@ input, select {
   font-weight: 700;
 }
 
+/* ---------------------------------------------------------------- calendar */
+.calendar {
+  margin-bottom: 20px;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  gap: 1px;
+}
+
+.calendar-cell-outside {
+  border-color: transparent;
+  visibility: hidden;
+}
+
+.calendar-cell-today {
+  border-color: var(--text);
+  border-width: 2px;
+}
+
+.calendar-date {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.calendar-cell-workout {
+  background: var(--accent-bg);
+  border-color: var(--accent-bg);
+}
+
+.calendar-cell-workout .calendar-date {
+  color: var(--accent-text);
+  opacity: 0.7;
+}
+
+.calendar-workout {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
 /* ---------------------------------------------------------------- detail overlay (history + manage form) */
 .detail-overlay {
   position: fixed;
@@ -522,7 +585,9 @@ input, select {
 .detail-actions {
   display: flex;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 .detail-actions .primary-btn,
@@ -600,6 +665,16 @@ input, select {
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 10px;
+}
+
+.progress-exercise-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 24px 0 10px;
+}
+
+.progress-exercise-title:first-child {
+  margin-top: 0;
 }
 
 /* ---------------------------------------------------------------- body / measurement form */

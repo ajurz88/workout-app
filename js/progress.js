@@ -2,53 +2,58 @@ import { getDistinctExerciseNames, getSessionSetsForExercise } from './db.js';
 import { getChartColors } from './theme.js';
 
 const root = () => document.getElementById('view-progress');
-let weightChart = null;
-let volumeChart = null;
+let charts = [];
 
 export async function renderProgress() {
   const container = root();
   container.innerHTML = `
     <h1 class="view-title">Progress</h1>
-    <select id="exercise-select" class="select-input">
-      <option value="">Select an exercise...</option>
-    </select>
-    <div id="progress-charts"></div>
+    <div id="progress-charts"><p class="muted">Loading...</p></div>
   `;
 
-  const select = document.getElementById('exercise-select');
+  const chartsEl = document.getElementById('progress-charts');
+  let names;
   try {
-    const names = await getDistinctExerciseNames();
-    select.innerHTML +=
-      names.map((n) => `<option value="${n}">${n}</option>`).join('');
+    names = await getDistinctExerciseNames();
   } catch (e) {
-    document.getElementById('progress-charts').innerHTML = `<p class="error">Could not load exercises: ${e.message}</p>`;
+    chartsEl.innerHTML = `<p class="error">Could not load exercises: ${e.message}</p>`;
     return;
   }
 
-  select.addEventListener('change', () => {
-    if (select.value) loadExerciseProgress(select.value);
-    else document.getElementById('progress-charts').innerHTML = '';
-  });
+  if (names.length === 0) {
+    chartsEl.innerHTML = '<p class="muted">No logged sets yet.</p>';
+    return;
+  }
+
+  charts.forEach((c) => c.destroy());
+  charts = [];
+
+  chartsEl.innerHTML = names
+    .map(
+      (name, i) => `
+      <h2 class="progress-exercise-title">${name}</h2>
+      <div class="chart-card">
+        <div class="chart-title">Best Weight (kg)</div>
+        <canvas id="weight-chart-${i}"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Total Volume (kg × reps)</div>
+        <canvas id="volume-chart-${i}"></canvas>
+      </div>`
+    )
+    .join('');
+
+  await Promise.all(names.map((name, i) => loadExerciseCharts(name, i)));
 }
 
-async function loadExerciseProgress(exerciseName) {
-  const chartsEl = document.getElementById('progress-charts');
-  chartsEl.innerHTML = `
-    <p class="muted">Loading...</p>
-  `;
-
+async function loadExerciseCharts(exerciseName, index) {
   let rows;
   try {
     rows = await getSessionSetsForExercise(exerciseName);
   } catch (e) {
-    chartsEl.innerHTML = `<p class="error">Could not load progress: ${e.message}</p>`;
     return;
   }
-
-  if (rows.length === 0) {
-    chartsEl.innerHTML = '<p class="muted">No logged sets for this exercise yet.</p>';
-    return;
-  }
+  if (rows.length === 0) return;
 
   const bySession = {};
   rows.forEach((r) => {
@@ -61,34 +66,27 @@ async function loadExerciseProgress(exerciseName) {
   const dates = Object.keys(bySession).sort();
   const bestWeights = dates.map((d) => bySession[d].bestWeight);
   const volumes = dates.map((d) => bySession[d].volume);
-
-  chartsEl.innerHTML = `
-    <div class="chart-card">
-      <div class="chart-title">Best Weight (kg)</div>
-      <canvas id="weight-chart"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Total Volume (kg × reps)</div>
-      <canvas id="volume-chart"></canvas>
-    </div>
-  `;
-
-  if (weightChart) weightChart.destroy();
-  if (volumeChart) volumeChart.destroy();
-
   const labels = dates.map(formatDate);
 
-  weightChart = new Chart(document.getElementById('weight-chart'), {
-    type: 'line',
-    data: { labels, datasets: [chartDataset(bestWeights)] },
-    options: chartOptions(),
-  });
+  const weightEl = document.getElementById(`weight-chart-${index}`);
+  const volumeEl = document.getElementById(`volume-chart-${index}`);
+  if (!weightEl || !volumeEl) return;
 
-  volumeChart = new Chart(document.getElementById('volume-chart'), {
-    type: 'line',
-    data: { labels, datasets: [chartDataset(volumes)] },
-    options: chartOptions(),
-  });
+  charts.push(
+    new Chart(weightEl, {
+      type: 'line',
+      data: { labels, datasets: [chartDataset(bestWeights)] },
+      options: chartOptions(bestWeights),
+    })
+  );
+
+  charts.push(
+    new Chart(volumeEl, {
+      type: 'line',
+      data: { labels, datasets: [chartDataset(volumes)] },
+      options: chartOptions(volumes),
+    })
+  );
 }
 
 function chartDataset(data) {
@@ -103,14 +101,28 @@ function chartDataset(data) {
   };
 }
 
-function chartOptions() {
+// Pad the y-axis to the data's own range instead of always starting at 0,
+// so small session-to-session changes are actually visible as movement.
+function computeAxisRange(data) {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  if (min === max) {
+    const pad = Math.max(min * 0.1, 1);
+    return { min: Math.max(0, min - pad), max: max + pad };
+  }
+  const pad = (max - min) * 0.15;
+  return { min: Math.max(0, min - pad), max: max + pad };
+}
+
+function chartOptions(data) {
   const colors = getChartColors();
+  const range = computeAxisRange(data);
   return {
     responsive: true,
     plugins: { legend: { display: false } },
     scales: {
       x: { grid: { display: false }, ticks: { color: colors.tick } },
-      y: { grid: { color: colors.grid }, ticks: { color: colors.tick }, beginAtZero: true },
+      y: { grid: { color: colors.grid }, ticks: { color: colors.tick }, min: range.min, max: range.max },
     },
   };
 }

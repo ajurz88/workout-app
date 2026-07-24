@@ -17,10 +17,13 @@ let currentSets = [];
 let currentNotesByExercise = {}; // exercise_name -> { id, note } | undefined
 let editMode = false;
 
+const DAY_ABBR = { 'Upper A': 'UA', 'Lower A': 'LA', 'Upper B': 'UB', 'Lower B': 'LB' };
+
 export async function renderHistory() {
   const container = root();
   container.innerHTML = `
     <h1 class="view-title">History</h1>
+    <div id="history-calendar"></div>
     <div id="history-list"><p class="muted">Loading...</p></div>
     <div id="session-detail-overlay" class="detail-overlay">
       <div class="detail-sheet">
@@ -28,8 +31,8 @@ export async function renderHistory() {
           <span id="session-detail-title"></span>
           <button id="session-detail-close" class="close-btn">✕</button>
         </div>
-        <div id="session-detail-actions" class="detail-actions"></div>
         <div id="session-detail-body"></div>
+        <div id="session-detail-actions" class="detail-actions"></div>
       </div>
     </div>
   `;
@@ -44,6 +47,8 @@ async function loadList() {
   listEl.innerHTML = '<p class="muted">Loading...</p>';
   try {
     const sessions = await getSessions();
+    renderCalendar(sessions);
+
     if (sessions.length === 0) {
       listEl.innerHTML = '<p class="muted">No sessions logged yet.</p>';
       return;
@@ -64,6 +69,73 @@ async function loadList() {
   } catch (e) {
     listEl.innerHTML = `<p class="error">Could not load history: ${e.message}</p>`;
   }
+}
+
+function renderCalendar(sessions) {
+  const calendarEl = document.getElementById('history-calendar');
+
+  const sessionsByDate = {};
+  sessions.forEach((s) => {
+    if (!sessionsByDate[s.session_date]) sessionsByDate[s.session_date] = s.day;
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 29);
+
+  const gridStart = getMonday(startDate);
+  const todayDow = today.getDay();
+  const daysAfterToday = todayDow === 0 ? 0 : 7 - todayDow;
+  const gridEnd = new Date(today);
+  gridEnd.setDate(gridEnd.getDate() + daysAfterToday);
+
+  const cells = [];
+  for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate() + 1)) {
+    const iso = toISODateLocal(d);
+    const inRange = d >= startDate && d <= today;
+    const workoutDay = sessionsByDate[iso];
+    cells.push({
+      dayOfMonth: d.getDate(),
+      inRange,
+      isToday: iso === toISODateLocal(today),
+      abbr: workoutDay ? DAY_ABBR[workoutDay] || workoutDay.slice(0, 2).toUpperCase() : null,
+    });
+  }
+
+  calendarEl.innerHTML = `
+    <div class="calendar">
+      <div class="calendar-weekdays">
+        ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => `<span>${d}</span>`).join('')}
+      </div>
+      <div class="calendar-grid">
+        ${cells
+          .map(
+            (c) => `
+          <div class="calendar-cell${c.inRange ? '' : ' calendar-cell-outside'}${c.abbr ? ' calendar-cell-workout' : ''}${c.isToday ? ' calendar-cell-today' : ''}">
+            <span class="calendar-date">${c.dayOfMonth}</span>
+            ${c.abbr ? `<span class="calendar-workout">${c.abbr}</span>` : ''}
+          </div>`
+          )
+          .join('')}
+      </div>
+    </div>
+  `;
+}
+
+function getMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function toISODateLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 async function openDetail(sessionId, sessions) {
