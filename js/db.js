@@ -5,47 +5,78 @@ const DAYS = ['Upper A', 'Lower A', 'Upper B', 'Lower B'];
 export { DAYS };
 
 // ---------------------------------------------------------------------------
-// exercises
+// exercise pool — exercise definitions, independent of any workout day
 // ---------------------------------------------------------------------------
-export async function getExercises() {
-  const { data, error } = await supabase
-    .from('exercises')
-    .select('*')
-    .order('day', { ascending: true })
-    .order('order_index', { ascending: true });
+export async function getExercisePool() {
+  const { data, error } = await supabase.from('exercises').select('*').order('name', { ascending: true });
   if (error) throw error;
   return data;
 }
 
+export async function addPoolExercise(exercise) {
+  const { data, error } = await supabase.from('exercises').insert(exercise).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updatePoolExercise(id, updates) {
+  const { data, error } = await supabase.from('exercises').update(updates).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+// Removes the exercise from the pool entirely, and (via ON DELETE CASCADE)
+// from every workout day it was assigned to. Past session history is
+// unaffected — session_sets keeps its own snapshot of the exercise name.
+export async function deletePoolExercise(id) {
+  const { error } = await supabase.from('exercises').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// workout day composition — which pool exercises belong to which day
+// ---------------------------------------------------------------------------
 export async function getExercisesForDay(day) {
   const { data, error } = await supabase
-    .from('exercises')
-    .select('*')
+    .from('workout_exercises')
+    .select('order_index, exercises(*)')
+    .eq('day', day)
+    .order('order_index', { ascending: true });
+  if (error) throw error;
+  return data.filter((row) => row.exercises).map((row) => ({ ...row.exercises, order_index: row.order_index }));
+}
+
+// Like getExercisesForDay, but keeps the workout_exercises row id so Manage
+// can remove a single day-assignment without touching the pool exercise.
+export async function getWorkoutAssignmentsForDay(day) {
+  const { data, error } = await supabase
+    .from('workout_exercises')
+    .select('id, order_index, exercise_id, exercises(*)')
     .eq('day', day)
     .order('order_index', { ascending: true });
   if (error) throw error;
   return data;
 }
 
-export async function addExercise(exercise) {
-  const { data, error } = await supabase.from('exercises').insert(exercise).select().single();
+export async function addExerciseToDay(day, exerciseId) {
+  const { data: existing, error: fetchError } = await supabase
+    .from('workout_exercises')
+    .select('order_index')
+    .eq('day', day)
+    .order('order_index', { ascending: false })
+    .limit(1);
+  if (fetchError) throw fetchError;
+  const nextOrder = existing.length > 0 ? existing[0].order_index + 1 : 1;
+  const { error } = await supabase
+    .from('workout_exercises')
+    .insert({ day, exercise_id: exerciseId, order_index: nextOrder });
   if (error) throw error;
-  return data;
 }
 
-export async function updateExercise(id, updates) {
-  const { data, error } = await supabase
-    .from('exercises')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteExercise(id) {
-  const { error } = await supabase.from('exercises').delete().eq('id', id);
+// Removes just this day's assignment (by workout_exercises row id) — the
+// pool exercise itself, and other days using it, are untouched.
+export async function removeExerciseFromDay(assignmentId) {
+  const { error } = await supabase.from('workout_exercises').delete().eq('id', assignmentId);
   if (error) throw error;
 }
 
@@ -99,15 +130,29 @@ export async function getSessions() {
 export async function getSessionDetail(sessionId) {
   const { data, error } = await supabase
     .from('session_sets')
-    .select('*, exercises(order_index)')
+    .select('*, sessions!inner(day)')
     .eq('session_id', sessionId);
   if (error) throw error;
+  if (data.length === 0) return data;
 
-  // Order by the exercise's position in the workout day (not alphabetically).
-  // Sets from a deleted exercise (no exercises row left to join) sort last.
+  // Order by the exercise's current position in that workout day (not
+  // alphabetically). Sets from an exercise no longer on that day's list
+  // (removed or deleted since) sort last.
+  const day = data[0].sessions.day;
+  const { data: assignments, error: assignmentsError } = await supabase
+    .from('workout_exercises')
+    .select('exercise_id, order_index')
+    .eq('day', day);
+  if (assignmentsError) throw assignmentsError;
+
+  const orderByExerciseId = {};
+  assignments.forEach((a) => {
+    orderByExerciseId[a.exercise_id] = a.order_index;
+  });
+
   return data.sort((a, b) => {
-    const aOrder = a.exercises?.order_index ?? Number.MAX_SAFE_INTEGER;
-    const bOrder = b.exercises?.order_index ?? Number.MAX_SAFE_INTEGER;
+    const aOrder = orderByExerciseId[a.exercise_id] ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = orderByExerciseId[b.exercise_id] ?? Number.MAX_SAFE_INTEGER;
     if (aOrder !== bOrder) return aOrder - bOrder;
     return a.set_number - b.set_number;
   });

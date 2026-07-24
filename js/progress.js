@@ -2,58 +2,52 @@ import { getDistinctExerciseNames, getSessionSetsForExercise } from './db.js';
 import { getChartColors } from './theme.js';
 
 const root = () => document.getElementById('view-progress');
-let charts = [];
+let weightChart = null;
+let volumeChart = null;
 
 export async function renderProgress() {
   const container = root();
   container.innerHTML = `
     <h1 class="view-title">Progress</h1>
-    <div id="progress-charts"><p class="muted">Loading...</p></div>
+    <select id="exercise-select" class="select-input">
+      <option value="">Select an exercise...</option>
+    </select>
+    <div id="progress-charts"></div>
   `;
 
-  const chartsEl = document.getElementById('progress-charts');
-  let names;
+  const select = document.getElementById('exercise-select');
   try {
-    names = await getDistinctExerciseNames();
+    const names = await getDistinctExerciseNames();
+    select.innerHTML += names.map((n) => `<option value="${n}">${n}</option>`).join('');
   } catch (e) {
-    chartsEl.innerHTML = `<p class="error">Could not load exercises: ${e.message}</p>`;
+    document.getElementById('progress-charts').innerHTML = `<p class="error">Could not load exercises: ${e.message}</p>`;
     return;
   }
 
-  if (names.length === 0) {
-    chartsEl.innerHTML = '<p class="muted">No logged sets yet.</p>';
-    return;
-  }
-
-  charts.forEach((c) => c.destroy());
-  charts = [];
-
-  chartsEl.innerHTML = names
-    .map(
-      (name, i) => `
-      <h2 class="progress-exercise-title">${name}</h2>
-      <div class="chart-card">
-        <div class="chart-title">Best Weight (kg)</div>
-        <canvas id="weight-chart-${i}"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">Total Volume (kg × reps)</div>
-        <canvas id="volume-chart-${i}"></canvas>
-      </div>`
-    )
-    .join('');
-
-  await Promise.all(names.map((name, i) => loadExerciseCharts(name, i)));
+  select.addEventListener('change', () => {
+    if (select.value) loadExerciseProgress(select.value);
+    else document.getElementById('progress-charts').innerHTML = '';
+  });
 }
 
-async function loadExerciseCharts(exerciseName, index) {
+async function loadExerciseProgress(exerciseName) {
+  const chartsEl = document.getElementById('progress-charts');
+  chartsEl.innerHTML = `
+    <p class="muted">Loading...</p>
+  `;
+
   let rows;
   try {
     rows = await getSessionSetsForExercise(exerciseName);
   } catch (e) {
+    chartsEl.innerHTML = `<p class="error">Could not load progress: ${e.message}</p>`;
     return;
   }
-  if (rows.length === 0) return;
+
+  if (rows.length === 0) {
+    chartsEl.innerHTML = '<p class="muted">No logged sets for this exercise yet.</p>';
+    return;
+  }
 
   const bySession = {};
   rows.forEach((r) => {
@@ -66,27 +60,34 @@ async function loadExerciseCharts(exerciseName, index) {
   const dates = Object.keys(bySession).sort();
   const bestWeights = dates.map((d) => bySession[d].bestWeight);
   const volumes = dates.map((d) => bySession[d].volume);
+
+  chartsEl.innerHTML = `
+    <div class="chart-card">
+      <div class="chart-title">Best Weight (kg)</div>
+      <canvas id="weight-chart"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Total Volume (kg × reps)</div>
+      <canvas id="volume-chart"></canvas>
+    </div>
+  `;
+
+  if (weightChart) weightChart.destroy();
+  if (volumeChart) volumeChart.destroy();
+
   const labels = dates.map(formatDate);
 
-  const weightEl = document.getElementById(`weight-chart-${index}`);
-  const volumeEl = document.getElementById(`volume-chart-${index}`);
-  if (!weightEl || !volumeEl) return;
+  weightChart = new Chart(document.getElementById('weight-chart'), {
+    type: 'line',
+    data: { labels, datasets: [chartDataset(bestWeights)] },
+    options: chartOptions(bestWeights),
+  });
 
-  charts.push(
-    new Chart(weightEl, {
-      type: 'line',
-      data: { labels, datasets: [chartDataset(bestWeights)] },
-      options: chartOptions(bestWeights),
-    })
-  );
-
-  charts.push(
-    new Chart(volumeEl, {
-      type: 'line',
-      data: { labels, datasets: [chartDataset(volumes)] },
-      options: chartOptions(volumes),
-    })
-  );
+  volumeChart = new Chart(document.getElementById('volume-chart'), {
+    type: 'line',
+    data: { labels, datasets: [chartDataset(volumes)] },
+    options: chartOptions(volumes),
+  });
 }
 
 function chartDataset(data) {

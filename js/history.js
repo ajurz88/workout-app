@@ -76,7 +76,7 @@ function renderCalendar(sessions) {
 
   const sessionsByDate = {};
   sessions.forEach((s) => {
-    if (!sessionsByDate[s.session_date]) sessionsByDate[s.session_date] = s.day;
+    if (!sessionsByDate[s.session_date]) sessionsByDate[s.session_date] = s;
   });
 
   const today = new Date();
@@ -94,12 +94,13 @@ function renderCalendar(sessions) {
   for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate() + 1)) {
     const iso = toISODateLocal(d);
     const inRange = d >= startDate && d <= today;
-    const workoutDay = sessionsByDate[iso];
+    const session = sessionsByDate[iso];
     cells.push({
       dayOfMonth: d.getDate(),
       inRange,
       isToday: iso === toISODateLocal(today),
-      abbr: workoutDay ? DAY_ABBR[workoutDay] || workoutDay.slice(0, 2).toUpperCase() : null,
+      abbr: session ? DAY_ABBR[session.day] || session.day.slice(0, 2).toUpperCase() : null,
+      sessionId: session ? session.id : null,
     });
   }
 
@@ -112,7 +113,7 @@ function renderCalendar(sessions) {
         ${cells
           .map(
             (c) => `
-          <div class="calendar-cell${c.inRange ? '' : ' calendar-cell-outside'}${c.abbr ? ' calendar-cell-workout' : ''}${c.isToday ? ' calendar-cell-today' : ''}">
+          <div class="calendar-cell${c.inRange ? '' : ' calendar-cell-outside'}${c.abbr ? ' calendar-cell-workout' : ''}${c.isToday ? ' calendar-cell-today' : ''}" ${c.sessionId ? `data-session="${c.sessionId}"` : ''}>
             <span class="calendar-date">${c.dayOfMonth}</span>
             ${c.abbr ? `<span class="calendar-workout">${c.abbr}</span>` : ''}
           </div>`
@@ -121,6 +122,10 @@ function renderCalendar(sessions) {
       </div>
     </div>
   `;
+
+  calendarEl.querySelectorAll('.calendar-cell[data-session]').forEach((cell) => {
+    cell.addEventListener('click', () => openDetail(cell.dataset.session, sessions));
+  });
 }
 
 function getMonday(date) {

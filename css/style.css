@@ -186,6 +186,11 @@ input, select {
   min-height: 44px;
 }
 
+.select-input {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
 /* ---------------------------------------------------------------- day picker (Today) */
 .day-picker {
   display: grid;
@@ -526,6 +531,7 @@ input, select {
 .calendar-cell-workout {
   background: var(--accent-bg);
   border-color: var(--accent-bg);
+  cursor: pointer;
 }
 
 .calendar-cell-workout .calendar-date {
@@ -667,16 +673,6 @@ input, select {
   margin-bottom: 10px;
 }
 
-.progress-exercise-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 24px 0 10px;
-}
-
-.progress-exercise-title:first-child {
-  margin-top: 0;
-}
-
 /* ---------------------------------------------------------------- body / measurement form */
 .latest-card {
   border: 1px solid var(--text);
@@ -732,8 +728,32 @@ input, select {
 }
 
 /* ---------------------------------------------------------------- manage */
+.manage-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 24px 0 4px;
+}
+
+.manage-section-title:first-of-type {
+  margin-top: 8px;
+}
+
+.manage-section-hint {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+#add-pool-exercise-btn {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+#pool-list {
+  margin-bottom: 8px;
+}
+
 .manage-day-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .manage-day-title {
@@ -743,6 +763,10 @@ input, select {
   letter-spacing: 0.03em;
   color: var(--muted);
   margin-bottom: 8px;
+}
+
+.manage-day-exercises {
+  margin-bottom: 10px;
 }
 
 .manage-row {
@@ -771,9 +795,34 @@ input, select {
   margin-top: 2px;
 }
 
-#add-exercise-btn {
+.manage-assigned-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-light);
+  padding: 12px 4px;
+  min-height: 56px;
+}
+
+.manage-assigned-row > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.remove-assignment-btn {
+  flex-shrink: 0;
+  background: var(--surface);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+
+.add-to-day-btn {
   width: 100%;
-  margin-bottom: 16px;
 }
 
 .manage-settings {
