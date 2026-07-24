@@ -1,4 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Loaded as a global via js/vendor/supabase.js (self-hosted UMD build) —
+// see the <script> tag in index.html, included before this module.
+const { createClient } = window.supabase;
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 export const isConfigured =

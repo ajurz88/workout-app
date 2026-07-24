@@ -1,9 +1,10 @@
-const CACHE_NAME = 'workout-tracker-v9';
+const CACHE_NAME = 'workout-tracker-v10';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './css/style.css',
+  './js/vendor/supabase.js',
   './js/app.js',
   './js/config.js',
   './js/supabaseClient.js',
