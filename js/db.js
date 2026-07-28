@@ -127,6 +127,19 @@ export async function getSessions() {
   return data;
 }
 
+// Ordering here is on sessions' own columns (not a joined table), so unlike
+// getLastLoggedSets this can safely rely on the server-side order.
+export async function getMostRecentSession() {
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('day, session_date')
+    .order('session_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  return data.length > 0 ? data[0] : null;
+}
+
 export async function getSessionDetail(sessionId) {
   const { data, error } = await supabase
     .from('session_sets')

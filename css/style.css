@@ -200,6 +200,7 @@ input, select {
 }
 
 .day-btn {
+  position: relative;
   background: var(--surface);
   color: var(--text);
   border: 2px solid var(--text);
@@ -213,6 +214,25 @@ input, select {
 .day-btn.active {
   background: var(--accent-bg);
   color: var(--accent-text);
+}
+
+.day-btn-next {
+  display: none;
+  position: absolute;
+  top: -9px;
+  right: 8px;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 3px 7px;
+  border-radius: 999px;
+}
+
+.day-btn.suggested .day-btn-next {
+  display: inline-block;
 }
 
 /* ---------------------------------------------------------------- exercise cards */

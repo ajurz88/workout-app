@@ -1,4 +1,4 @@
-import { DAYS, getExercisesForDay, getLastLoggedSets, saveSession } from './db.js';
+import { DAYS, getExercisesForDay, getLastLoggedSets, getMostRecentSession, saveSession } from './db.js';
 import { startRestTimer } from './timer.js';
 import { openExerciseHistory } from './exerciseHistory.js';
 import { openGymBarcode } from './gymBarcode.js';
@@ -19,7 +19,7 @@ export async function renderToday() {
     <h1 class="view-title">Today</h1>
     <button id="gym-checkin-btn" class="secondary-btn">🎫 Gym Check-In</button>
     <div class="day-picker">
-      ${DAYS.map((d) => `<button class="day-btn" data-day="${d}">${d}</button>`).join('')}
+      ${DAYS.map((d) => `<button class="day-btn" data-day="${d}"><span class="day-btn-next">Next</span>${d}</button>`).join('')}
     </div>
     <div id="today-log"></div>
   `;
@@ -34,6 +34,25 @@ export async function renderToday() {
     highlightDay(currentDay);
     await selectDay(currentDay);
   }
+
+  highlightSuggestedDay();
+}
+
+async function highlightSuggestedDay() {
+  let suggestedDay = DAYS[0];
+  try {
+    const lastSession = await getMostRecentSession();
+    if (lastSession) {
+      const idx = DAYS.indexOf(lastSession.day);
+      suggestedDay = DAYS[(idx + 1) % DAYS.length];
+    }
+  } catch (e) {
+    return; // no suggestion if we can't determine it — not critical
+  }
+
+  root()
+    .querySelectorAll('.day-btn')
+    .forEach((b) => b.classList.toggle('suggested', b.dataset.day === suggestedDay));
 }
 
 function highlightDay(day) {
