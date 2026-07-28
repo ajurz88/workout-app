@@ -168,27 +168,35 @@ export async function getSessionSetsForExercise(exerciseName) {
   return data;
 }
 
-// Sets from the most recent session that included this exercise, ordered by
-// the session's actual (user-assigned) date — not by created_at/insertion
-// time, which can differ if a session was logged for a past date or edited
-// later. created_at is still used as a tiebreaker for same-date sessions.
+// Sets from the most recent session that included this exercise, by the
+// session's actual (user-assigned) date — not created_at/insertion time,
+// which can differ if a session was logged for a past date or edited later.
+// The "most recent" session is found client-side (comparing ISO date
+// strings, which sort correctly) rather than via a sort across the joined
+// sessions table, which isn't reliably applied through the JS client.
 export async function getLastLoggedSets(exerciseName) {
   const { data, error } = await supabase
     .from('session_sets')
     .select('session_id, set_number, weight, reps, sessions!inner(session_date)')
-    .eq('exercise_name', exerciseName)
-    .order('session_date', { foreignTable: 'sessions', ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(20);
+    .eq('exercise_name', exerciseName);
   if (error) throw error;
   if (!data || data.length === 0) return null;
 
-  const lastSessionId = data[0].session_id;
+  let latestDate = null;
+  let latestSessionId = null;
+  data.forEach((r) => {
+    const d = r.sessions.session_date;
+    if (!latestDate || d > latestDate) {
+      latestDate = d;
+      latestSessionId = r.session_id;
+    }
+  });
+
   const sets = data
-    .filter((r) => r.session_id === lastSessionId)
+    .filter((r) => r.session_id === latestSessionId)
     .sort((a, b) => a.set_number - b.set_number);
 
-  return { date: data[0].sessions.session_date, sets };
+  return { date: latestDate, sets };
 }
 
 export async function getSessionNotes(sessionId) {
@@ -236,12 +244,18 @@ export async function deleteSession(id) {
 export async function getAllSessionSetsFlat() {
   const { data, error } = await supabase
     .from('session_sets')
-    .select('session_id, exercise_name, set_number, weight, reps, sessions!inner(session_date, day)')
-    .order('session_date', { foreignTable: 'sessions', ascending: true })
-    .order('exercise_name', { ascending: true })
-    .order('set_number', { ascending: true });
+    .select('session_id, exercise_name, set_number, weight, reps, sessions!inner(session_date, day)');
   if (error) throw error;
-  return data;
+
+  // Sort client-side — ordering across the joined sessions table isn't
+  // reliably applied through the JS client (see getLastLoggedSets).
+  return data.sort((a, b) => {
+    if (a.sessions.session_date !== b.sessions.session_date) {
+      return a.sessions.session_date < b.sessions.session_date ? -1 : 1;
+    }
+    if (a.exercise_name !== b.exercise_name) return a.exercise_name < b.exercise_name ? -1 : 1;
+    return a.set_number - b.set_number;
+  });
 }
 
 // All notes, keyed by session_id + exercise_name so they can be matched up
