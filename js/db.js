@@ -168,14 +168,16 @@ export async function getSessionSetsForExercise(exerciseName) {
   return data;
 }
 
-// Sets from the most recent session that included this exercise. Relies on
-// all sets of one exercise in one session sharing a created_at batch, so the
-// newest rows (limited) all belong to that latest session.
+// Sets from the most recent session that included this exercise, ordered by
+// the session's actual (user-assigned) date — not by created_at/insertion
+// time, which can differ if a session was logged for a past date or edited
+// later. created_at is still used as a tiebreaker for same-date sessions.
 export async function getLastLoggedSets(exerciseName) {
   const { data, error } = await supabase
     .from('session_sets')
     .select('session_id, set_number, weight, reps, sessions!inner(session_date)')
     .eq('exercise_name', exerciseName)
+    .order('session_date', { foreignTable: 'sessions', ascending: false })
     .order('created_at', { ascending: false })
     .limit(20);
   if (error) throw error;
